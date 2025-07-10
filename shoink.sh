@@ -25,19 +25,19 @@ ${reset}
 
 services=("TinyURL" "Tinycc" "ulvis.net" "Coming Soon...")
 
-echo -e "$banner\n"
-echo -e "${magenta}(*) A URL Shortener...${reset}\n"
-
 # Choose a service function
 choose_service() {
     echo -e "(=) Choose a service:\n"
-    count=0
-    for service in "${services[@]}"; do
-        ((count++))
-        echo -e "${cyan}$count. $service${reset}"
-    done
+
+    echo -e "${cyan}1. TinyURL${reset}"
+    echo -e "${cyan}2. TinyCC${reset}"
+    echo -e "${cyan}3. ulvis.net${reset}"
+    echo -e "${cyan}4. Coming soon...${reset}"
+    echo -e "${cyan}5. Exit${reset}"
+
     echo ""
     read -p "(->) Enter your selection (ex: 1): " service_choice
+    [[ "$service_choice" == "/q" ]] && safe_exit
     echo ""
     service_choice_verifier "$service_choice"
 }
@@ -48,75 +48,344 @@ service_choice_verifier() {
         1) tinyurl_options ;;
         2) tinycc_options ;;
         3) ulvisnet_options ;;
-        4) echo -e "${yellow}(*) Coming Soon...${reset}" ;;
-        *) echo -e "${red}(*) Invalid selection. Exiting.${reset}" ;;
+        4) coming_soon ;;
+        5) safe_exit ;;
+        *) main_menu 1;;
     esac
+}
+
+# Exit function
+safe_exit() {
+    echo -e "${yellow}Quitting...${reset}"
+    exit 0
+}
+
+# Coming soon function
+coming_soon() {
+    echo -e "${yellow}(*) Coming Soon${reset}" 
+    read -p "(->) Press Enter to return to menu..." random
+}
+
+# Return to menu function
+main_menu() {
+    if [[ $1 == 1 ]]; then
+        echo -e "${red}(*) Invalid option.${reset}" 
+        read -p "(->) Press Enter to return to menu..." random
+        return
+    elif [[ $1 == 2 ]]; then
+        read -p "(->) Press Enter to return to menu..." random
+        return
+    fi
+}
+
+wait_for_input() {
+    echo -e "${yellow}(*) Press Enter to continue...${reset}"
+    read -r
 }
 
 # TinyURL
 tinyurl_options() {
     echo -e "${magenta}(*) TinyURL Selected${reset}\n(=) Choose an option:\n"
+
     echo -e "${cyan}1. Shorten a URL${reset}"
+    echo -e "${cyan}2. Update an existing alias${reset}"
+    echo -e "${cyan}3. Get TinyURL information${reset}"
+    echo -e "${cyan}4. Get a list of TinyURLs${reset}"
+    echo -e "${cyan}5. Get count of TinyURLs${reset}"
+    echo -e "${cyan}6. Go back${reset}"
+    echo -e "${cyan}7. Exit${reset}"
+
     echo ""
     read -p "(->) Enter your selection (ex: 1): " option_choice
 
     case "$option_choice" in
         1)
-            read -p "(->) Enter the URL to shorten: " long_url
+            while true; do
+                read -p "(->) Enter the URL to shorten: " long_url
 
-            if [[ -z "$long_url" ]]; then
-                echo -e "${red}(*) Error: No URL entered.${reset}"
-                return
-            fi
+                if [[ "$long_url" == "/q" ]]; then
+                    safe_exit
+                fi
 
-            if ! [[ "$long_url" =~ ^https?:// ]]; then
-                echo -e "${red}(*) Invalid URL format. Must start with http:// or https://${reset}"
-                return
-            fi
+                if [[ -z "$long_url" ]]; then
+                    echo -e "${red}(*) No URL entered.${reset}\n"
+                    continue
+                fi
 
-            read -p "(->) Custom alias (press enter to skip): " custom_alias
-            echo -e "(=) Shortening URL: $long_url"
+                if ! [[ "$long_url" =~ ^https?:// ]]; then
+                    echo -e "${red}(*) Invalid URL format. Must start with http:// or https://${reset}\n"
+                    continue
+                fi
 
-            payload="{\"url\": \"$long_url\""
-                    [[ -n "$custom_alias" ]] && payload+=", \"alias\": \"$custom_alias\""
-                    payload+="}"
+                break
+            done
 
-            response=$(curl -s -X POST \
-                "https://api.tinyurl.com/create?api_token=$TINYURL_API_KEY" \
-                -H "accept: application/json" \
-                -H "Authorization: Bearer $TINYURL_API_KEY" \
-                -H "Content-Type: application/json" \
-                -d "$payload")
+            while true; do
+                read -p "(->) Custom alias (press enter to skip): " custom_alias
 
-            short_url=$(echo "$response" | jq -r '.data.tiny_url // empty')
+                if [[ "$custom_alias" == "/q" ]]; then
+                    safe_exit
+                fi
 
-            if [[ -n "$short_url" ]]; then
-                echo -e "\n${green}(*) Shortened URL: $short_url${reset}"
-            else
-                echo -e "\n${red}(*) Error: Could not shorten URL.\n${reset}(*) ${yellow}Response:\n$response${reset}"
-            fi
+                echo -e "(=) Shortening URL: $long_url"
+
+                payload="{\"url\": \"$long_url\""
+                        [[ -n "$custom_alias" ]] && payload+=", \"alias\": \"$custom_alias\""
+                        payload+="}"
+
+                response=$(curl -s -X POST \
+                    "https://api.tinyurl.com/create?api_token=$TINYURL_API_KEY" \
+                    -H "accept: application/json" \
+                    -H "Authorization: Bearer $TINYURL_API_KEY" \
+                    -H "Content-Type: application/json" \
+                    -d "$payload")
+
+                short_url=$(echo "$response" | jq -r '.data.tiny_url? // empty')
+                error_message=$(echo "$response" | jq -r '.errors[0] // empty')
+
+                if [[ -n "$short_url" ]]; then
+                    echo -e "\n${green}(*) Shortened URL: $short_url${reset}"
+                    main_menu 2
+                    break
+                elif [[ "$error_message" == "Alias is not available." ]]; then
+                    echo -e "${red}(*) Alias already taken. Please try another.${reset}\n"
+                    continue
+                else
+                    echo -e "\n${red}(*) Error: Could not shorten URL.\n${reset}${yellow}(*) Response:\n$response${reset}"
+                    main_menu 2
+                    break
+                fi
+            done
         ;;
-        *) echo "(*) Invalid option. Returning to menu." ;;
+        2)
+            while true; do
+                read -p "(->) Enter the alias you wish to update: " old_alias
+
+                if [[ "$old_alias" == "/q" ]]; then
+                    safe_exit
+                fi
+
+                if [[ -z "$old_alias" ]]; then
+                    echo -e "${red}(*) No alias entered.${reset}\n"
+                    continue
+                fi
+
+                break
+            done
+
+            while true; do
+                read -p "(->) Enter the new alias: " new_alias
+
+                if [[ "$new_alias" == "/q" ]]; then
+                    safe_exit
+                fi
+
+                if [[ -z "$new_alias" ]]; then
+                    echo -e "${red}(*) No alias entered.${reset}\n"
+                    continue
+                fi
+
+                echo -e "(=) Updating URL for alias: ${magenta}$old_alias${reset} to ${magenta}$new_alias${reset}"
+
+                payload="{\"alias\": \"$old_alias\", \"new_alias\": \"$new_alias\"}"
+
+                response=$(curl -s -X 'PATCH' \
+                        "https://api.tinyurl.com/update?api_token=$TINYURL_API_KEY" \
+                        -H 'accept: application/json' \
+                        -H "Authorization: Bearer $TINYURL_API_KEY" \
+                        -H 'Content-Type: application/json' \
+                        -d "$payload")
+
+                short_url=$(echo "$response" | jq -r '.data.tiny_url? // empty')
+                error_message=$(echo "$response" | jq -r '.errors[0] // empty')
+
+                if [[ -n "$short_url" ]]; then
+                    echo -e "\n${green}(*) Alias updated successfully: $short_url${reset}"
+                    main_menu 2
+                elif [[ "$error_message" == "Alias is not available." ]]; then
+                    echo -e "${red}(*) The alias is not available.${reset}\n"
+                    wait_for_input
+                    continue
+                elif [[ "$error_message" == "The Alias format is invalid." ]]; then
+                    echo -e "${red}(*) The alias format is invalid.${reset}\n"
+                    wait_for_input
+                    continue
+                elif [[ "$error_message" == "The Alias must not be greater than 30 characters." ]]; then
+                    echo -e "${red}(*) The alias must not be greater than 30 characters.${reset}\n"
+                    wait_for_input
+                    continue
+                elif [[ "$error_message" == "Something went wrong." ]]; then
+                    echo -e "${red}(*) Something went wrong.${reset}\n"
+                    wait_for_input
+                    continue
+                else
+                    echo -e "\n${red}(*) Could not update alias.\n${reset}${yellow}(*) Response:\n$response${reset}"
+                    wait_for_input
+                    continue
+                fi
+
+                break
+            done
+        ;;
+        3)
+            while true; do
+                read -p "(->) Enter a TinyURL: " tinyurl
+
+                if [[ "$tinyurl" == "/q" ]]; then
+                    safe_exit
+                fi
+
+                if [[ -z "$tinyurl" ]]; then
+                    echo -e "${red}(*) No TinyURL entered.${reset}\n"
+                    continue
+                fi
+
+                if [[ "$tinyurl" =~ ^https?:// ]]; then
+                    formatted_tinyurl="${tinyurl#*://}"
+                    domain="${formatted_tinyurl%%/*}"
+                    alias="${formatted_tinyurl#*/}"
+                else
+                    domain="tinyurl.com"
+                    alias="$tinyurl"
+                fi
+
+                echo -e "(=) Fetching information for alias: ${magenta}$alias${reset} on domain ${magenta}$domain${reset}"
+
+                response=$(curl -s -X 'GET' \
+                        "https://api.tinyurl.com/alias/$domain/$alias?api_token=$TINYURL_API_KEY" \
+                        -H 'accept: application/json' \
+                        -H "Authorization: Bearer $TINYURL_API_KEY")
+                
+                fetched_domain=$(echo "$response" | jq -r '.data.domain? // empty')
+                fetched_alias=$(echo "$response" | jq -r '.data.alias? // empty')
+                created_at=$(echo "$response" | jq -r '.data.created_at? // empty')
+                user_name=$(echo "$response" | jq -r '.data.user.name? // empty')
+                user_email=$(echo "$response" | jq -r '.data.user.email? // empty')
+                long_url=$(echo "$response" | jq -r '.data.url? // empty')
+
+                echo -e "\n${green}(*) Information for alias: $fetched_alias${reset}"
+                printf "  ${magenta}Domain:${reset}   %s\n" "$fetched_domain"
+                printf "  ${magenta}Alias:${reset}    %s\n" "$fetched_alias"
+                printf "  ${magenta}Long URL:${reset} %s\n" "$long_url"
+                printf "  ${magenta}Created:${reset}  %s\n" "$created_at"
+                printf "  ${magenta}User:${reset}     %s\n" "$user_name" 
+                printf "  ${magenta}Email:${reset}    %s\n\n" "$user_email"
+
+                wait_for_input
+
+                break
+            done
+        ;;
+        4)
+            while true; do
+                read -p "(->) Search for an alias (press enter to list all): " search_alias
+
+                if [[ "$search_alias" == "/q" ]]; then
+                    safe_exit
+                fi
+
+                if [[ -z "$search_alias" ]]; then
+                    echo -e "(=) Listing all TinyURLs..."
+                    response=$(curl -s -X 'GET' \
+                            "https://api.tinyurl.com/urls/available?api_token=$TINYURL_API_KEY" \
+                            -H 'accept: application/json' \
+                            -H "Authorization: Bearer $TINYURL_API_KEY")
+                else
+                    echo -e "(=) Searching for alias: ${magenta}$search_alias${reset}"
+                    response=$(curl -s -X 'GET' \
+                            "https://api.tinyurl.com/urls/available?search=alias%3A$search_alias&api_token=$TINYURL_API_KEY" \
+                            -H 'accept: application/json' \
+                            -H "Authorization: Bearer $TINYURL_API_KEY")
+                fi
+
+                if [[ $(echo "$response" | jq -r '.data | length') -eq 0 ]]; then
+                    echo -e "${red}(*) No TinyURLs found.${reset}\n"
+                    wait_for_input
+                    continue
+                fi
+
+                echo -e "\n${green}(*) TinyURLs found:${reset}"
+
+                i=1
+                echo "$response" | jq -r '.data[] | "\(.alias) |\(.tiny_url) |\(.created_at)"' | while IFS='|' read -r alias tiny_url created_at; do
+                    created_date=$(echo "$created_at" | cut -d'T' -f1)
+                    printf "  ${cyan}%2d.${reset} ${magenta}%-25s${reset} - %-30s - Created at: ${yellow}%s${reset}\n" "$i" "$alias" "$tiny_url" "$created_date"
+                    ((i++))
+                done
+
+                echo ""
+                wait_for_input
+                
+                break
+            done
+        ;;
+        5)
+            while true; do
+
+                read -p "(->) Enter an alias to get its count (press enter to get total count): " alias_count
+
+                if [[ "$alias_count" == "/q" ]]; then
+                    safe_exit
+                fi
+
+                if [[ -z "$alias_count" ]]; then
+                    echo -e "(=) Getting total count of TinyURLs..."
+                    response=$(curl -s -X 'GET' \
+                            "https://api.tinyurl.com/urls/available/count?api_token=$TINYURL_API_KEY" \
+                            -H 'accept: application/json' \
+                            -H "Authorization: Bearer $TINYURL_API_KEY")
+                else
+                    echo -e "(=) Getting count for alias: ${magenta}$alias_count${reset}"
+                    response=$(curl -s -X 'GET' \
+                        "https://api.tinyurl.com/urls/available/count?search=alias%3A$alias_count&api_token=$TINYURL_API_KEY" \
+                        -H 'accept: application/json' \
+                        -H "Authorization: Bearer $TINYURL_API_KEY")
+                fi
+
+                count=$(echo "$response" | jq -r '.data.count? // empty')
+
+                if [[ -z "$alias_count" ]]; then
+                    echo -e "\n${green}(*) Total alias count is: ${yellow}$count${reset}\n"
+                else
+                    echo -e "\n${green}(*) Count for alias: ${magenta}$alias_count${reset} is ${yellow}$count${reset}\n"
+                fi
+
+                wait_for_input
+
+                break
+            done
+        ;;
+        6) return ;;
+        7) safe_exit ;;
+        *) 
+            echo -e "(*) Invalid option: \"$option_choice\"\n" 
+            tinyurl_options
+        ;;
     esac
 }
 
 # Tinycc
 tinycc_options() {
-    echo -e "(*) Tinycc Selected\n(=) Feature coming soon...\n"
-    read -p "(->) Press Enter to return to menu..." dummy
-    choose_service
+    echo -e "${magenta}(*) Tinycc Selected${reset}\n${yellow}(=) Feature coming soon...${reset}\n"
+    read -p "(->) Press Enter to return to menu..." random
+    return
 }
 
 # ulvis.net
 ulvisnet_options() {
-    echo -e "(*) ulvis.net Selected\n(=) Feature coming soon...\n"
-    read -p "(->) Press Enter to return to menu..." dummy
-    choose_service
+    echo -e "${magenta}(*) ulvis.net Selected${reset}\n${yellow}(=) Feature coming soon...${reset}\n"
+    read -p "(->) Press Enter to return to menu..." random
+    return
 }
 
 # Main function
 main() {
-    choose_service
+    while true; do
+        clear
+        echo -e "$banner\n"
+        echo -e "${magenta}(*) A URL Shortener...${reset}\n"
+        choose_service
+    done
 }
 
 main
