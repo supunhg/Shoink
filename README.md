@@ -24,7 +24,7 @@ Shoink is a sleek, terminal-based URL shortener built in pure Bash. It provides 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/shoink.git
+git clone https://github.com/supunhg/Shoink
 cd shoink
 ````
 
