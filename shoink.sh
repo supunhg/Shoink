@@ -1,7 +1,7 @@
 #!/bin/bash
 source .env
 
-ver="v1.2" 
+ver="v1.3" 
 
 # Colors
 red="\e[31m"
@@ -366,9 +366,86 @@ tinyurl_options() {
 
 # Tinycc
 tinycc_options() {
-    echo -e "${magenta}(*) Tinycc Selected${reset}\n${yellow}(=) Feature coming soon...${reset}\n"
-    read -p "(->) Press Enter to return to menu..." random
-    return
+
+    #--------------------------------------
+    echo -e "${magenta}(*) Tinycc Selected${reset}\n(=) Choose an option:\n"
+
+    echo -e "${cyan}1. Shorten a URL${reset}"
+
+    echo -e "${cyan}2. Go back${reset}"
+    echo -e "${cyan}3. Exit${reset}"
+
+    echo ""
+    read -p "(->) Enter your selection (ex: 1): " option_choice
+
+    case "$option_choice" in
+        1)
+            while true; do
+                read -p "(->) Enter the URL to shorten: " long_url
+
+                if [[ "$long_url" == "/q" ]]; then
+                    safe_exit
+                fi
+
+                if [[ -z "$long_url" ]]; then
+                    echo -e "${red}(*) No URL entered.${reset}\n"
+                    continue
+                fi
+
+                if ! [[ "$long_url" =~ ^https?:// ]]; then
+                    echo -e "${red}(*) Invalid URL format. Must start with http:// or https://${reset}\n"
+                    continue
+                fi
+
+                break
+            done
+
+            while true; do
+                read -p "(->) Custom alias (press enter to skip): " custom_alias
+
+                if [[ "$custom_alias" == "/q" ]]; then
+                    safe_exit
+                fi
+
+                echo -e "(=) Shortening URL: $long_url"
+
+                payload="{\"urls\": [{\"long_url\": \"$long_url\""
+                        [[ -n "$custom_alias" ]] && payload+=", \"custom_hash\": \"$custom_alias\""
+                        payload+="}]}"
+
+                response=$(curl -s -X POST \
+                    "https://tiny.cc/tiny/api/3/urls" \
+                    -H "X-Tinycc-User: $TINYCC_USER" \
+                    -H "X-Tinycc-Key: $TINYCC_API_KEY" \
+                    -H "Content-Type: application/json" \
+                    -d "$payload")
+
+                short_url_with_protocol=$(echo "$response" | jq -r '.urls[0].short_url_with_protocol? // empty')
+                error_code=$(echo "$response" | jq -r '.urls[0].error.code? // empty')
+                error_details=$(echo "$response" | jq -r '.urls[0].error.details? // empty')
+
+                if [[ -n "$short_url_with_protocol" ]]; then
+                    echo -e "\n${green}(*) Shortened URL: $short_url_with_protocol${reset}"
+                    main_menu 2
+                    break
+                elif [[ "$error_code" == "1215" ]]; then
+                    echo -e "\n${red}(*) $error_details${reset}"
+                    wait_for_input
+                    continue
+                else
+                    echo -e "\n${red}(*) Could not shorten URL.\n${reset}${yellow}(*) Error details:\n$error_details${reset}"
+                    wait_for_input
+                    continue
+                fi
+            done
+        ;;
+        2) return ;;
+        3) safe_exit ;;
+        *) 
+            echo -e "(*) Invalid option: \"$option_choice\"\n" 
+            tinyurl_options
+        ;;
+    esac
 }
 
 # ulvis.net

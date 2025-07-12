@@ -97,7 +97,7 @@ You’ll be able to:
 | Feature               | Status        |
 | --------------------- | ------------- |
 | TinyURL Support       | ✅ Complete    |
-| Tiny.cc Integration   | ⏳ Coming soon |
+| Tiny.cc Integration   | 🚧 In progress |
 | ulvis.net Support     | ⏳ Coming soon |
 | More services...      | ⏳ Coming soon |
 | CLI arguments support | 🔜 Planned    |
