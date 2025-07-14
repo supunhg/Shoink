@@ -367,13 +367,13 @@ tinyurl_options() {
 # Tinycc
 tinycc_options() {
 
-    #--------------------------------------
     echo -e "${magenta}(*) Tinycc Selected${reset}\n(=) Choose an option:\n"
 
     echo -e "${cyan}1. Shorten a URL${reset}"
+    echo -e "${cyan}2. Get a list of TinyCC URLs${reset}"
 
-    echo -e "${cyan}2. Go back${reset}"
-    echo -e "${cyan}3. Exit${reset}"
+    echo -e "${cyan}3. Go back${reset}"
+    echo -e "${cyan}4. Exit${reset}"
 
     echo ""
     read -p "(->) Enter your selection (ex: 1): " option_choice
@@ -439,8 +439,47 @@ tinycc_options() {
                 fi
             done
         ;;
-        2) return ;;
-        3) safe_exit ;;
+
+        2) 
+            read -p "(->) Enter a search term (press enter to list all): " search_term
+            if [[ "$search_term" == "/q" ]]; then
+                safe_exit
+            fi
+
+            if [[ -z "$search_term" ]]; then
+                echo -e "(=) Listing all TinyCC URLs..."
+                response=$(curl -s -X GET \
+                    "https://tiny.cc/tiny/api/3/urls" \
+                    -H "X-Tinycc-User: $TINYCC_USER" \
+                    -H "X-Tinycc-Key: $TINYCC_API_KEY")
+            else
+                echo -e "(=) Searching for URLs with term: ${magenta}$search_term${reset}"
+                response=$(curl -s -X GET \
+                    "https://tiny.cc/tiny/api/3/urls?search=$search_term&limit=100" \
+                    -H "X-Tinycc-User: $TINYCC_USER" \
+                    -H "X-Tinycc-Key: $TINYCC_API_KEY")
+            fi
+
+            if [[ $(echo "$response" | jq -r '.urls | length') -eq 0 ]]; then
+                echo -e "\n${red}(*) No TinyCC URLs found.${reset}\n"
+            else
+                echo -e "\n${green}(*) TinyCC URLs found:${reset}"
+                i=1
+                echo "$response" | jq -r '.urls[] | "\(.hash) |\(.short_url_with_protocol) | \(.long_url) | \(.created_at) | \(.clicks)"' | while IFS='|' read -r hash short_url long_url created_at clicks; do
+                created_date=$(echo "$created_at" | cut -d'T' -f1)
+                printf "  ${cyan}%2d.${reset} ${magenta}%-10s${reset} - %-30s - %-40s\n" "$i" "$hash" "$short_url" "$long_url"
+                ((i++))
+                done
+                echo ""
+            fi
+
+            wait_for_input
+
+            break
+        ;;
+
+        3) return ;;
+        4) safe_exit ;;
         *) 
             echo -e "(*) Invalid option: \"$option_choice\"\n" 
             tinyurl_options
