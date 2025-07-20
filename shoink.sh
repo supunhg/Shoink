@@ -561,7 +561,6 @@ tinycc_options() {
                     wait_for_input
                     continue
                 fi
-
             done
         ;;
 
