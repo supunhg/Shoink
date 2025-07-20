@@ -2,7 +2,7 @@
 
 Shoink is a sleek, terminal-based URL shortener built in pure Bash. It provides a menu-driven interface to interact with popular URL shortening services like **TinyURL**, with plans to support **Tiny.cc**, **ulvis.net**, and more. This tool is ideal for developers, terminal lovers, and automation workflows.
 
-> 💡 Version: `v1.2`  
+> 💡 Version: `v1.3`  
 > 📦 Status: Actively maintained  
 
 ---
@@ -10,11 +10,12 @@ Shoink is a sleek, terminal-based URL shortener built in pure Bash. It provides 
 ## 🎯 Features
 
 - ✅ Shorten long URLs using [TinyURL](https://tinyurl.com/)
+- ✅ Shorten URLs using [Tiny.cc](https://tiny.cc/) with full management features
 - ✅ Optional custom aliases
 - ✅ Interactive menu system
 - ✅ Color-coded terminal UI
 - 🔒 Environment-based API key management
-- 🔜 Planned support for Tiny.cc, ulvis.net and more...
+- 🔜 Planned support for ulvis.net and more...
 - 🧩 Modular design for future integrations
 
 ---
@@ -34,8 +35,9 @@ Create a `.env` file in the root directory with your API keys:
 
 ```env
 TINYURL_API_KEY=your_tinyurl_api_key_here
+TINYCC_USER=your_tinycc_username_here
+TINYCC_API_KEY=your_tinycc_api_key_here
 # Future:
-# TINYCC_API_KEY=...
 # ULVIS_API_KEY=...
 ```
 
@@ -63,9 +65,10 @@ Follow the interactive prompts:
 (=) Choose a service:
 
 1. TinyURL
-2. Tinycc
+2. TinyCC
 3. ulvis.net
-4. Exit
+4. Coming soon...
+5. Exit
 ```
 
 You’ll be able to:
@@ -92,12 +95,25 @@ You’ll be able to:
 
 ---
 
+## 🎉 Tiny.cc Features
+
+The Tiny.cc integration now includes comprehensive URL management capabilities:
+
+- **✅ URL Shortening** - Create short links with optional custom aliases
+- **✅ URL Listing** - View all your shortened URLs with search functionality  
+- **✅ Account Info** - Check your account details and usage limits
+- **✅ URL Editing** - Update existing short URLs (change destination and alias)
+
+All Tiny.cc features support error handling and provide detailed feedback for various scenarios.
+
+---
+
 ## 🧩 Roadmap
 
 | Feature               | Status        |
 | --------------------- | ------------- |
 | TinyURL Support       | ✅ Complete    |
-| Tiny.cc Integration   | 🚧 In progress |
+| Tiny.cc Integration   | ✅ Complete    |
 | ulvis.net Support     | ⏳ Coming soon |
 | More services...      | ⏳ Coming soon |
 | CLI arguments support | 🔜 Planned    |

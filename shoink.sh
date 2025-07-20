@@ -371,9 +371,10 @@ tinycc_options() {
 
     echo -e "${cyan}1. Shorten a URL${reset}"
     echo -e "${cyan}2. Get a list of TinyCC URLs${reset}"
-
-    echo -e "${cyan}3. Go back${reset}"
-    echo -e "${cyan}4. Exit${reset}"
+    echo -e "${cyan}3. Get account information${reset}"
+    echo -e "${cyan}4. Edit a TinyCC URL${reset}"
+    echo -e "${cyan}5. Go back${reset}"
+    echo -e "${cyan}6. Exit${reset}"
 
     echo ""
     read -p "(->) Enter your selection (ex: 1): " option_choice
@@ -474,12 +475,98 @@ tinycc_options() {
             fi
 
             wait_for_input
+            break
+        ;;
+        3) 
+            echo -e "(=) Fetching account information..."
+            response=$(curl -s -X GET \
+                "https://tiny.cc/tiny/api/3/account" \
+                -H "X-Tinycc-User: $TINYCC_USER" \
+                -H "X-Tinycc-Key: $TINYCC_API_KEY")
 
+            if [[ $(echo "$response" | jq -r '.account | length') -eq 0 ]]; then
+                echo -e "\n${red}(*) Could not fetch account information.${reset}\n"
+                wait_for_input
+                return
+            fi
+
+            user_id=$(echo "$response" | jq -r '.account.user_id? // empty')
+            user_name=$(echo "$response" | jq -r '.account.username? // empty')
+            total_urls=$(echo "$response" | jq -r '.account.counters.urls.count? // empty')
+            url_limit=$(echo "$response" | jq -r '.account.counters.urls.limit? // empty')
+
+            echo -e "\n${green}(*) Account Information:${reset}"
+            printf "  ${magenta}User ID:${reset} %s\n" "$user_id"
+            printf "  ${magenta}Username:${reset} %s\n" "$user_name"
+            printf "  ${magenta}Total URLs:${reset} %s\n" "$total_urls"
+            printf "  ${magenta}URL Limit:${reset} %s\n" "$url_limit"
+            echo ""
+
+            wait_for_input
             break
         ;;
 
-        3) return ;;
-        4) safe_exit ;;
+        4)
+            # Edit a TinyCC URLs long url by giving the hash, new long url and custom alias
+            while true; do
+                read -p "(->) Enter the hash of the URL to edit: " hash
+
+                if [[ "$hash" == "/q" ]]; then
+                    safe_exit
+                fi
+
+                if [[ -z "$hash" ]]; then
+                    echo -e "${red}(*) No hash entered.${reset}\n"
+                    continue
+                fi
+
+                read -p "(->) Enter the new long URL: " new_long_url
+
+                if [[ "$new_long_url" == "/q" ]]; then
+                    safe_exit
+                fi
+
+                read -p "(->) Enter the new custom alias (press enter to skip): " new_alias
+
+                if [[ "$new_alias" == "/q" ]]; then
+                    safe_exit
+                fi
+
+                echo -e "(=) Updating URL with hash: ${magenta}$hash${reset} to new long URL: ${magenta}$new_long_url${reset} and new alias: ${magenta}$new_alias${reset}"
+
+                payload="{\"urls\": [{\"hash\": \"$hash\", \"long_url\": \"$new_long_url\""
+                [[ -n "$new_alias" ]] && payload+=", \"custom_hash\": \"$new_alias\""
+                payload+="}]}"
+                response=$(curl -s -X PATCH \
+                    "https://tiny.cc/tiny/api/3/urls" \
+                    -H "X-Tinycc-User: $TINYCC_USER" \
+                    -H "X-Tinycc-Key: $TINYCC_API_KEY" \
+                    -H "Content-Type: application/json" \
+                    -d "$payload")
+
+                short_url_with_protocol=$(echo "$response" | jq -r '.urls[0].short_url_with_protocol? // empty')
+                error_code=$(echo "$response" | jq -r '.urls[0].error.code? // empty')
+                error_details=$(echo "$response" | jq -r '.urls[0].error.details? // empty')
+
+                if [[ -n "$short_url_with_protocol" ]]; then
+                    echo -e "\n${green}(*) URL updated successfully: $short_url_with_protocol${reset}"
+                    main_menu 2
+                    break
+                elif [[ "$error_code" == "1216" ]]; then
+                    echo -e "\n${red}(*) The Domain is not allowed.${reset}"
+                    wait_for_input
+                    continue
+                else
+                    echo -e "\n${red}(*) Could not update URL.\n${reset}${yellow}(*) Error details:\n$error_details${reset}"
+                    wait_for_input
+                    continue
+                fi
+
+            done
+        ;;
+
+        5) return ;;
+        6) safe_exit ;;
         *) 
             echo -e "(*) Invalid option: \"$option_choice\"\n" 
             tinyurl_options
