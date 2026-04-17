@@ -49,7 +49,7 @@ print_success() {
 }
 
 print_error() {
-    echo -e "${red}(*) $1${reset}"
+    echo -e "${red}(*) $1${reset}" >&2
 }
 
 wait_for_input() {
@@ -160,6 +160,10 @@ run_request() {
 
 is_json() {
     jq -e . >/dev/null 2>&1 <<<"$1"
+}
+
+is_cloudflare_challenge() {
+    [[ "$1" == *"Just a moment..."* || "$1" == *"Enable JavaScript and cookies to continue"* || "$1" == *"_cf_chl_opt"* ]]
 }
 
 urlencode() {
@@ -792,6 +796,11 @@ ulvis_shorten() {
 
     run_request response ulvis_write_request "$long_url" "$custom_alias" "$private_flag" "$password" "$uses" "$expire" || return 1
 
+    if is_cloudflare_challenge "$response"; then
+        print_error "ulvis.net is currently blocking automated requests behind a Cloudflare challenge."
+        return 1
+    fi
+
     if ! is_json "$response"; then
         print_error "ulvis.net returned a non-JSON response."
         return 1
@@ -822,6 +831,11 @@ ulvis_lookup() {
     fi
 
     run_request response ulvis_read_request "$identifier" "$password" || return 1
+
+    if is_cloudflare_challenge "$response"; then
+        print_error "ulvis.net is currently blocking automated requests behind a Cloudflare challenge."
+        return 1
+    fi
 
     if ! is_json "$response"; then
         print_error "ulvis.net returned a non-JSON response."

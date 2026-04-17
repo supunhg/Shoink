@@ -10,7 +10,7 @@ Shoink is a terminal-based URL shortener built in Bash. It wraps multiple shorte
 - Shorten links with **TinyURL**
 - Manage **TinyURL** aliases, lookups, listings, and counts
 - Shorten and manage links with **Tiny.cc**
-- Shorten and inspect links with **ulvis.net**
+- Shorten and inspect links with **ulvis.net** when the upstream API allows non-browser access
 - Optional custom aliases
 - Interactive terminal menus
 - Non-interactive CLI mode for automation
@@ -45,6 +45,7 @@ Shoink is a terminal-based URL shortener built in Bash. It wraps multiple shorte
 - Set a max-use limit
 - Set an expiration date
 - Inspect an existing ulvis short link
+- Surface a clear error when ulvis.net blocks CLI traffic behind Cloudflare
 
 ## Requirements
 
@@ -175,7 +176,7 @@ Shoink/
 | --- | --- |
 | TinyURL support | Complete |
 | Tiny.cc integration | Complete |
-| ulvis.net support | Complete |
+| ulvis.net support | Experimental |
 | CLI argument support | Complete |
 | History and logging | Planned |
 | More services | Planned |
@@ -184,6 +185,7 @@ Shoink/
 
 - TinyURL and Tiny.cc features depend on valid account credentials.
 - ulvis.net support is implemented from the public developer API at `https://ulvis.net/developer.html`.
+- As of April 17, 2026, live CLI requests from this environment can be blocked by a Cloudflare challenge on ulvis.net, so that integration should be treated as experimental.
 - API behavior is still subject to the service providers' own limits, availability, and policy changes.
 
 ## Author
