@@ -1,162 +1,184 @@
-# 🚀 Shoink - **_The_** URL Shortener
+# Shoink
 
-Shoink is a sleek, terminal-based URL shortener built in pure Bash. It provides a menu-driven interface to interact with popular URL shortening services like **TinyURL**, with plans to support **Tiny.cc**, **ulvis.net**, and more. This tool is ideal for developers, terminal lovers, and automation workflows.
+Shoink is a terminal-based URL shortener built in Bash. It wraps multiple shortening services behind one menu-driven CLI and now supports both interactive use and lightweight command-line automation.
 
-> 💡 Version: `v1.3`  
-> 📦 Status: Actively maintained  
+> Version: `v1.4`  
+> Status: Ready to use
 
----
+## Features
 
-## 🎯 Features
+- Shorten links with **TinyURL**
+- Manage **TinyURL** aliases, lookups, listings, and counts
+- Shorten and manage links with **Tiny.cc**
+- Shorten and inspect links with **ulvis.net**
+- Optional custom aliases
+- Interactive terminal menus
+- Non-interactive CLI mode for automation
+- Safe `.env` loading for TinyURL and Tiny.cc credentials
+- Clear validation and error messages for missing config or bad input
 
-- ✅ Shorten long URLs using [TinyURL](https://tinyurl.com/)
-- ✅ Shorten URLs using [Tiny.cc](https://tiny.cc/) with full management features
-- ✅ Optional custom aliases
-- ✅ Interactive menu system
-- ✅ Color-coded terminal UI
-- 🔒 Environment-based API key management
-- 🔜 Planned support for ulvis.net and more...
-- 🧩 Modular design for future integrations
+## Supported Services
 
----
+### TinyURL
 
-## 🛠️ Setup
+- Create shortened URLs
+- Use an optional custom alias
+- Update an existing alias
+- Inspect an existing TinyURL
+- List available TinyURLs
+- Count total or filtered TinyURLs
 
-### 1. Clone the Repository
+### Tiny.cc
 
-```bash
-git clone https://github.com/supunhg/Shoink
-cd shoink
-````
+- Create shortened URLs
+- Use an optional custom alias
+- List and search existing URLs
+- Fetch account information
+- Edit an existing URL destination and alias
 
-### 2. Create a `.env` File
+### ulvis.net
 
-Create a `.env` file in the root directory with your API keys:
+- Create shortened URLs without an API key
+- Use an optional custom alias
+- Mark links as private
+- Protect links with a password
+- Set a max-use limit
+- Set an expiration date
+- Inspect an existing ulvis short link
 
-```env
-TINYURL_API_KEY=your_tinyurl_api_key_here
-TINYCC_USER=your_tinycc_username_here
-TINYCC_API_KEY=your_tinycc_api_key_here
-# Future:
-# ULVIS_API_KEY=...
-```
+## Requirements
 
-> 🔐 Keep this file **private** and **excluded from version control** using `.gitignore`.
+- Bash
+- `curl`
+- `jq`
 
----
-
-## 🚀 Usage
-
-Make the script executable:
-
-```bash
-chmod +x shoink.sh
-```
-
-Run it:
-
-```bash
-./shoink.sh
-```
-
-Follow the interactive prompts:
-
-```bash
-(=) Choose a service:
-
-1. TinyURL
-2. TinyCC
-3. ulvis.net
-4. Coming soon...
-5. Exit
-```
-
-You’ll be able to:
-
-* Enter a URL to shorten
-* Optionally choose a custom alias
-* Get a shortened URL with minimal fuss
-
----
-
-## 🖼️ Sample Output
-
-```text
-(*) TinyURL Selected
-
-(->) Enter the URL to shorten: https://github.com/supunhg
-(->) Custom alias (press enter to skip): 
-(=) Shortening URL: https://github.com/supunhg
-
-(*) Shortened URL: https://tinyurl.com/jkdkjptb
-```
-
-![image](https://github.com/user-attachments/assets/7ccbb990-54d8-4c55-857b-9377ca8673ea)
-
----
-
-## 🎉 Tiny.cc Features
-
-The Tiny.cc integration now includes comprehensive URL management capabilities:
-
-- **✅ URL Shortening** - Create short links with optional custom aliases
-- **✅ URL Listing** - View all your shortened URLs with search functionality  
-- **✅ Account Info** - Check your account details and usage limits
-- **✅ URL Editing** - Update existing short URLs (change destination and alias)
-
-All Tiny.cc features support error handling and provide detailed feedback for various scenarios.
-
----
-
-## 🧩 Roadmap
-
-| Feature               | Status        |
-| --------------------- | ------------- |
-| TinyURL Support       | ✅ Complete    |
-| Tiny.cc Integration   | ✅ Complete    |
-| ulvis.net Support     | ⏳ Coming soon |
-| More services...      | ⏳ Coming soon |
-| CLI arguments support | 🔜 Planned    |
-| History & logging     | 🔜 Planned    |
-
----
-
-## 🤖 Dependencies
-
-* [`curl`](https://curl.se/) - for HTTP requests
-* [`jq`](https://stedolan.github.io/jq/) - for JSON parsing
-* Bash
-
-Install missing tools on Debian/Ubuntu:
+On Debian or Ubuntu:
 
 ```bash
 sudo apt install curl jq
 ```
 
----
+## Setup
 
-## 📂 Project Structure
+### 1. Clone the repository
 
-```
-shoink/
-├── shoink.sh       # Main executable script
-├── .env            # API keys (not committed)
-└── README.md       # This file
+```bash
+git clone https://github.com/supunhg/Shoink
+cd Shoink
 ```
 
----
+### 2. Create a `.env` file
 
-## ⚠️ Disclaimer
+The `.env` file is only required for TinyURL and Tiny.cc. ulvis.net works without credentials.
 
-* This is a developer-focused tool.
-* API usage is bound by the terms of respective services.
-* Use responsibly and avoid abuse.
+Shoink accepts either plain `KEY=value` lines or `export KEY=value` lines.
 
----
+```env
+TINYURL_API_KEY=your_tinyurl_api_key_here
+TINYCC_USER=your_tinycc_username_here
+TINYCC_API_KEY=your_tinycc_api_key_here
+```
 
-## 👨‍💻 Author
+Keep `.env` private and out of version control.
 
-Crafted with minimalism and functionality in mind by Supun Hewagamage
-🔗 [LinkedIn](#) • [GitHub](#) • [Portfolio](#)
+### 3. Make the script executable
 
----
+```bash
+chmod +x shoink.sh
+```
+
+## Usage
+
+### Interactive mode
+
+```bash
+./shoink.sh
+```
+
+Use `/q` at any prompt to quit immediately.
+
+Main menu:
+
+```text
+(=) Choose a service:
+
+1. TinyURL
+2. Tiny.cc
+3. ulvis.net
+4. Coming soon...
+5. Exit
+```
+
+### CLI mode
+
+Shorten a URL with TinyURL:
+
+```bash
+./shoink.sh --service tinyurl --url https://example.com
+```
+
+Shorten a URL with Tiny.cc using a custom alias:
+
+```bash
+./shoink.sh --service tinycc --url https://example.com --alias demo
+```
+
+Shorten a URL with ulvis.net and extra options:
+
+```bash
+./shoink.sh --service ulvis \
+  --url https://example.com \
+  --alias demo \
+  --private \
+  --password 1234 \
+  --uses 5 \
+  --expire 12/31/2026
+```
+
+Inspect an existing TinyURL:
+
+```bash
+./shoink.sh --service tinyurl --lookup my-alias
+```
+
+Inspect an existing ulvis link:
+
+```bash
+./shoink.sh --service ulvis --lookup my-alias
+```
+
+Show help:
+
+```bash
+./shoink.sh --help
+```
+
+## Project Structure
+
+```text
+Shoink/
+├── shoink.sh
+├── .env
+└── README.md
+```
+
+## Roadmap
+
+| Feature | Status |
+| --- | --- |
+| TinyURL support | Complete |
+| Tiny.cc integration | Complete |
+| ulvis.net support | Complete |
+| CLI argument support | Complete |
+| History and logging | Planned |
+| More services | Planned |
+
+## Notes
+
+- TinyURL and Tiny.cc features depend on valid account credentials.
+- ulvis.net support is implemented from the public developer API at `https://ulvis.net/developer.html`.
+- API behavior is still subject to the service providers' own limits, availability, and policy changes.
+
+## Author
+
+Crafted with minimalism and functionality in mind by Supun Hewagamage.

@@ -420,3 +420,4 @@ FodyWeavers.xsd
 # Custom
 .env
 .venv
+.codex
