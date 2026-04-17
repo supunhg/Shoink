@@ -73,6 +73,12 @@ The `.env` file is only required for TinyURL and Tiny.cc. ulvis.net works withou
 
 Shoink accepts either plain `KEY=value` lines or `export KEY=value` lines.
 
+Start from the included template:
+
+```bash
+cp .env.example .env
+```
+
 ```env
 TINYURL_API_KEY=your_tinyurl_api_key_here
 TINYCC_USER=your_tinycc_username_here
@@ -157,6 +163,7 @@ Show help:
 
 ```text
 Shoink/
+├── .env.example
 ├── shoink.sh
 ├── .env
 └── README.md
